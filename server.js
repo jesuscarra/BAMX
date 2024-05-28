@@ -1,6 +1,4 @@
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config()
-}
+
 
 const express = require('express')
 const app = express()
@@ -10,7 +8,11 @@ const flash = require('express-flash')
 const session = require('express-session')
 const methodOverride = require('method-override')
 const mysql = require('mysql')
+const csv = require('csv-parser');
+const fs = require('fs');
 
+require('dotenv').config();
+const csvFilePath = 'public/database/mapa.csv';
 const initializePassport = require('./passport-config')
 initializePassport(
     passport,
@@ -39,7 +41,7 @@ initializePassport(
 );
 
 
-app.set('view-engine', 'ejs')
+app.set('view engine', 'ejs')
 app.use(express.urlencoded({ extended: false }))
 app.use(flash())
 app.use(session({
@@ -71,17 +73,50 @@ db.connect((error)=>{
 /////////////////////////////////////////////////////
 
 
-// DEFINIMOS LAS RUTAS (./Routes/pages.js)///////////
-app.use('/', require('./routes/pages'))
-app.use('/register', require('./routes/pages'))
-app.use('/login', require('./routes/pages'))
+app.use(express.static('public'));
 
+async function checkAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+
+    res.redirect('/login');
+}
+
+async function checkNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return res.redirect('/');
+    }
+    next();
+}
+
+app.get('/', checkAuthenticated, async (req, res) => {
+    try {
+        const data = await readAndProcessCSV();
+        const chartConfig = makeChartConfig(data);
+        const secondChartConfig = makeSecondChartConfig(data);
+        res.render('index', { name: req.user.name, chartConfig: JSON.stringify(chartConfig),secondChartConfig: JSON.stringify(secondChartConfig) });
+    } catch (error) {
+        console.error("Error al cargar y procesar el archivo CSV:", error);
+        res.status(500).send("Error interno del servidor");
+    }
+});
+
+
+// DEFINIMOS LAS RUTAS (./Routes/pages.js)///////////
+app.get('/login', checkNotAuthenticated, (req, res) => {
+    res.render('login');
+});
+
+app.get('/register', checkNotAuthenticated, (req, res) => {
+    res.render('register');
+});
 
 app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
     successRedirect: '/',
     failureRedirect: '/login',
     failureFlash: true
-}))
+}));
 
 app.post('/register', checkNotAuthenticated, async (req, res) => {
     try {
@@ -116,23 +151,92 @@ app.delete('/logout', (req, res, next) => {
     });
 });
 
-function checkAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next()
-    }
+function readAndProcessCSV() {
+    return new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(csvFilePath)
+            .pipe(csv({ separator: ',' })) 
+            .on('data', (data) => {
+                // Convierte las cantidades a números y maneja el caso de las cantidades mal formateadas
+                const entidad = data.Entidad.trim(); // Elimina los espacios adicionales
+                const cantidad = parseFloat(data['	Cantidad'].trim()); 
+                const porcentaje = parseFloat(data['	% de total Cantidad junto con Entidad'].trim()); 
+                
+                if (!isNaN(cantidad)) {
+                    results.push({entidad, cantidad,porcentaje});
+                }
+            })
+            .on('end', () => {
+                resolve(results);
+            })
+            .on('error', reject);
+    })
+    };
 
-    res.redirect('/login')
+
+
+
+
+
+//grafica
+function makeChartConfig(data) {
+    console.log(data)
+    const labels = data.map(entry => entry.entidad);
+    const values = data.map(entry => entry.cantidad);
+
+    return {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cantidad por Entidad',
+                data: values,
+                backgroundColor: 'rgba(169, 169, 169, 0.2)', 
+                borderColor: 'black', 
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+        
+    };
+    
+
 }
 
-function checkNotAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return res.redirect('/')
-    }
-    next()
+function makeSecondChartConfig(data) {
+    const labels = data.map(entry => entry.entidad);
+    const values = data.map(entry => entry.porcentaje);
+
+    return {
+        type: 'line', // Tipo de gráfico de línea en lugar de barras
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Porcentaje por Entidad ',
+                data: values,
+                backgroundColor: 'rgba(169, 169, 169, 0.2)', 
+                borderColor: 'black', 
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    };
 }
 
-app.listen(3000)
-
-app.use(express.static('public'))
+app.listen(3000, () => {
+    console.log("Servidor iniciado en el puerto 3000");
+});
 
 

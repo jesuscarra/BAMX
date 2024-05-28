@@ -1,14 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/style.css">
-    <title>Banco de alimentos de Mexico</title>
+    <title>Dashboard</title>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chart-container {
+            width: 45%; /* Se reduce el ancho para dejar espacio para ambos gráficos */
+            max-width: 600px; /* Ancho máximo para los contenedores de gráficos */
+            height: 300px;
+            width: 90%;
+            margin-right: 5%; /* Espacio entre los contenedores */
+            margin-bottom: 20px;
+        }
+
+        .chart-container:last-child {
+            margin-right: 0; /* Elimina el margen derecho del último contenedor */
+        }
+
+        #welcome-message {
+            margin-bottom: 20px;
+        }
+        
+        #dashboard-message {
+            font-size: 18px; /* Tamaño de fuente aumentado */
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        .charts-wrapper {
+            display: flex; /* Mostrar los contenedores en línea */
+        }
+    </style>
 </head>
 
 <body>
 
-    <h2>Bienvenido/a, <%= name %></h2>
-    <form action="logOut?_method=DELETE" method="POST">
-        <button type="submit"> Cerrar sesión</button>
+    <h2 id="welcome-message">Bienvenido/a, <%= name %></h2>
+
+    <p id="dashboard-message">Dashboard sobre Centros de tratamiento o internamiento para adolescentes</p>
+
+    <!-- Contenedor de gráficos -->
+    
+        <!-- Primer gráfico -->
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+
+        <!-- Segundo gráfico -->
+        <div class="chart-container">
+            <canvas id="second-chart"></canvas>
+        </div>
+   
+
+    <script>
+        var ctx = document.getElementById('chart').getContext('2d');
+        var chartConfig = <%- chartConfig %>;
+        var chart = new Chart(ctx, chartConfig);
+
+        // Segundo gráfico
+        var secondCtx = document.getElementById('second-chart').getContext('2d');
+        var secondChartConfig = <%- secondChartConfig %>;
+        var secondChart = new Chart(secondCtx, secondChartConfig);
+    </script>
+
+    <form action="logout?_method=DELETE" method="POST">
+        <button type="submit">Cerrar sesión</button>
     </form>
+    
 </body>
+</html>
