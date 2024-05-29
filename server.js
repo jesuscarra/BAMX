@@ -1,5 +1,3 @@
-
-
 const express = require('express')
 const app = express()
 const bcrypt = require('bcrypt')
@@ -63,6 +61,13 @@ const db = mysql.createConnection({
   database: process.env.DATABASE
 })
 
+const dashboard = mysql.createConnection({
+    host: process.env.DATABASE_HOST,
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    database: 'mapa',
+});
+
 db.connect((error)=>{
   if(error){
     console.log(error)
@@ -70,6 +75,14 @@ db.connect((error)=>{
     console.log("Conectado a Mysql..")
   }
 })
+
+dashboard.connect((error) => {
+    if (error) {
+        console.log("Error de conexion en la base de datos: ",error);
+    } else {
+        console.log("Conectado a MySQL..");
+    }
+});
 /////////////////////////////////////////////////////
 
 
@@ -92,7 +105,7 @@ async function checkNotAuthenticated(req, res, next) {
 
 app.get('/', checkAuthenticated, async (req, res) => {
     try {
-        const data = await readAndProcessCSV();
+        const data = await readAndProcessDB();
         const chartConfig = makeChartConfig(data);
         const secondChartConfig = makeSecondChartConfig(data);
         res.render('index', { name: req.user.name, chartConfig: JSON.stringify(chartConfig),secondChartConfig: JSON.stringify(secondChartConfig) });
@@ -151,7 +164,7 @@ app.delete('/logout', (req, res, next) => {
     });
 });
 
-function readAndProcessCSV() {
+/*function readAndProcessCSV() {
     return new Promise((resolve, reject) => {
         const results = [];
         fs.createReadStream(csvFilePath)
@@ -171,9 +184,24 @@ function readAndProcessCSV() {
             })
             .on('error', reject);
     })
-    };
+    };*/
 
-
+    function readAndProcessDB() {
+        return new Promise((resolve, reject) => {
+            dashboard.query('SELECT * FROM mapa', (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    const processedData = results.map(entry => ({
+                        Entidad: entry.Entidad,
+                      Cantidad: parseFloat(entry['\tCantidad']) || 0,
+                    Porcentaje: parseFloat(entry['\t% de total Cantidad junto con Entidad'].replace(/,/g, '').replace(/ /g, '')) || 0
+                    }));
+                    resolve(processedData);
+                }
+            });
+        });
+    }
 
 
 
@@ -181,8 +209,8 @@ function readAndProcessCSV() {
 //grafica
 function makeChartConfig(data) {
     console.log(data)
-    const labels = data.map(entry => entry.entidad);
-    const values = data.map(entry => entry.cantidad);
+    const labels = data.map(entry => entry.Entidad);
+    const values = data.map(entry => entry.Cantidad);
 
     return {
         type: 'bar',
@@ -210,8 +238,8 @@ function makeChartConfig(data) {
 }
 
 function makeSecondChartConfig(data) {
-    const labels = data.map(entry => entry.entidad);
-    const values = data.map(entry => entry.porcentaje);
+    const labels = data.map(entry => entry.Entidad);
+    const values = data.map(entry => entry.Porcentaje);
 
     return {
         type: 'line', // Tipo de gráfico de línea en lugar de barras
