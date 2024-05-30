@@ -1,17 +1,8 @@
-# PROYECTO PARA EL BANCO DE ALIMENTOS DE HERMOSILLO
+# Dasboard sobre centros de tratamiento o internamiento para adolescentes en 2022
  
 ###  Descripción:
-Aplicación software que permita a sus usuarios capturar los datos requeridos sobre su vivienda y familia para aplicar al recibimiento de apoyo alimentario por parte de BAMX, y a los encargados del banco gestionar con mayor facilidad dichas aplicaciones al programa.
+Este es un proyecto utilizando javascript, node js y mysql crea un dashboard de una base de datos en donde se encuentran todos los centros de tratamiento o internamiento para adolescentes en 2022.
  
-### Objetivo general:
-Desarrollar un software que haga más sencillo el proceso de aplicación al programa tanto a los aspirantes como a los encargados, mediante una plataforma en la que se puedan introducir los datos del aspirante y una base de datos en la que se almacenen para fácil acceso.
- 
-###  Objetivo específicos:
-- Desarrollar una plataforma en la que se puedan capturar los datos de acuerdo al formato de BAMX
-- Desarrollar una base de datos en la que se puedan almacenar los datos
-- Desarrollar un mapa de calor en el que se puedan visualizar las áreas con mayor densidad de apoyados
-- Permitir el sencillo y ordenado acceso a la información de los aspirantes para darlos de alta o baja
-
 ###  Integrantes
 
  - [Fausto Medina](https://github.com/Harico04)
@@ -22,3 +13,20 @@ Desarrollar un software que haga más sencillo el proceso de aplicación al prog
  - [Ernesto Carrasco](https://github.com/jesuscarra) 
  - [Ricardo Peña](https://github.com/RemilZarza)
  - [Ian Zepeda](https://github.com/I4NzG)
+
+###  Requerimientos:
+1. Iinstalar las dos bases de datos del proyecto, estas estarán dentro del repositorio en formato .sql y solo necesitaras importarlas en MySQL. Una opción que recomiendo es hacerlo con XAAMP. Estas son:
+   - mapa.sql
+   - nodejs-login.sql 
+
+2. Tambien necesitaras NodeJS v20.13.1
+
+3. MariaDB v10.4.32
+
+### Instrucciones
+1.  clonamos el repositorio ```git clone https://github.com/jesuscarra/BAMX```.
+
+ 2. Una vez dentro de la carpeta del repositorio ejecutamos ```npm install``` y descargamos todas las dependencias.
+
+3.  Para correr el programa usamos ```npm run devStart```.
+     
